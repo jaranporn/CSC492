@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>สมัครสมาชิก</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>ระบบสรุปบทเรียนและ<br>สร้างแบบทดสอบอัตโนมัติโดย AI</h1>
+
+    <h2>สมัครสมาชิก</h2>
+
+    <form method="POST">
+
+        <label>ชื่อ</label>
+        <input type="text" name="name" placeholder="กรอกชื่อของคุณ" required>
+
+        <label>อีเมล</label>
+        <input type="email" name="email" placeholder="name@email.com" required>
+
+        <label>รหัสผ่าน</label>
+        <input type="password" name="password" placeholder="อย่างน้อย 8 ตัวอักษร" required>
+
+        <button type="submit">สมัครสมาชิก</button>
+
+    </form>
+
+    <p>
+        มีบัญชีอยู่แล้ว?
+        <a href="/login">เข้าสู่ระบบ</a>
+    </p>
+
+</div>
+
+</body>
+</html>
