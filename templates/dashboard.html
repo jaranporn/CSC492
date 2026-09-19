@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Lesson Summarizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="index-page">
+    <header class="index-topbar">
+        <h1>AI-Based Lesson Summarizer and Quiz Generator</h1>
+        <a href="#" class="btn-pill">บัญชีผู้ใช้</a>
+    </header>
+
+    <main class="index-panels">
+        <section class="panel">
+    <h2>เนื้อหาบทเรียน</h2>
+    <div class="dashed-box">
+        <p class="placeholder-text">ใส่ข้อความเพื่อสรุปเนื้อหา</p>
+    </div>
+    <div class="file-row">
+        <span class="file-icon">📁</span>
+        <span>เลือกไฟล์ รองรับ PDF / TXT</span>
+    </div>
+    <div class="btn-center">
+        <button class="btn-yellow">สรุปเนื้อหา</button>
+    </div>
+</section>
+
+<section class="panel">
+    <h2>ผลการสรุป</h2>
+    <div class="dashed-box">
+        <p class="placeholder-text">แสดงเนื้อหาที่สรุปแล้ว</p>
+    </div>
+    <div class="btn-center">
+        <button class="btn-yellow">สร้างแบบทดสอบ</button>
+    </div>
+</section>
+     
+    </main>
+</body>
+</html>

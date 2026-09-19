@@ -1,41 +1,66 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <title>สมัครสมาชิก</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
 </head>
+<body class="register-page">
+    <main class="register-card">
+        <h1>สมัครสมาชิก</h1>
 
-<body>
+        <form method="POST">
+            <label for="name">ชื่อ</label>
+            <input type="text" id="name" name="name" placeholder="กรอกชื่อของคุณ"
+                   value="{{ name or '' }}"
+                   class="{{ 'input-error' if errors.name }}">
+            {% if errors.name %}
+            <p class="field-error">{{ errors.name }}</p>
+            {% endif %}
 
-<div class="container">
+            <label for="email">อีเมล</label>
+            <input type="email" id="email" name="email" placeholder="name@email.com"
+                   value="{{ email or '' }}"
+                   class="{{ 'input-error' if errors.email }}">
+            {% if errors.email %}
+            <p class="field-error">{{ errors.email }}</p>
+            {% endif %}
 
-    <h1>ระบบสรุปบทเรียนและ<br>สร้างแบบทดสอบอัตโนมัติโดย AI</h1>
+            <label for="password">รหัสผ่าน</label>
+            <div class="password-wrapper">
+                <input type="password" id="password" name="password" placeholder="อย่างน้อย 8 ตัวอักษร"
+                       class="{{ 'input-error' if errors.password }}">
+                <span class="toggle-password" onclick="togglePassword('password', this)">
+                    <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </span>
+            </div>
+            {% if errors.password %}
+            <p class="field-error">{{ errors.password }}</p>
+            {% endif %}
 
-    <h2>สมัครสมาชิก</h2>
+            <button type="submit" class="btn-yellow-full">สมัครสมาชิก</button>
+        </form>
 
-    <form method="POST">
+        <p class="switch-link">
+            มีบัญชีอยู่แล้ว? <a href="{{ url_for('login') }}">เข้าสู่ระบบ</a>
+        </p>
+    </main>
 
-        <label>ชื่อ</label>
-        <input type="text" name="name" placeholder="กรอกชื่อของคุณ" required>
-
-        <label>อีเมล</label>
-        <input type="email" name="email" placeholder="name@email.com" required>
-
-        <label>รหัสผ่าน</label>
-        <input type="password" name="password" placeholder="อย่างน้อย 8 ตัวอักษร" required>
-
-        <button type="submit">สมัครสมาชิก</button>
-
-    </form>
-
-    <p>
-        มีบัญชีอยู่แล้ว?
-        <a href="/login">เข้าสู่ระบบ</a>
-    </p>
-
-</div>
-
+    <script>
+    function togglePassword(inputId, icon) {
+        const input = document.getElementById(inputId);
+        const svg = icon.querySelector('svg');
+        if (input.type === "password") {
+            input.type = "text";
+            svg.innerHTML = '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+        } else {
+            input.type = "password";
+            svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+        }
+    }
+    </script>
 </body>
 </html>

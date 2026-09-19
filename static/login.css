@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Kanit', Arial, sans-serif;
+}
+
+.login-page {
+    background-color: #FDF1D0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-card {
+    width: 400px;
+    text-align: center;
+}
+
+.login-card h1 {
+    color: #3A6EA5;
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+.login-card label {
+    display: block;
+    text-align: left;
+    color: #3A6EA5;
+    font-weight: 600;
+    margin: 15px 0 5px;
+}
+
+.login-card input {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+.btn-primary {
+    width: 100%;
+    background-color: #3A6EA5;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 25px;
+    cursor: pointer;
+}
+
+.switch-link {
+    margin-top: 20px;
+    color: #555;
+}
+
+.switch-link a {
+    color: #3A6EA5;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.register-page {
+    background-color: #376da5;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.register-card {
+    width: 450px;
+    text-align: center;
+}
+
+.register-card h1 {
+    color: #ffe28a;
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+.register-card label {
+    display: block;
+    text-align: left;
+    color: #ffe28a;
+    font-weight: 600;
+    margin: 15px 0 5px;
+}
+
+.register-card input {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+.btn-yellow-full {
+    width: 100%;
+    background-color: #ffe28a;
+    color: #376da5;
+    border: none;
+    padding: 14px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 25px;
+    cursor: pointer;
+}
+
+.register-card .switch-link {
+    color: white;
+}
+
+.register-card .switch-link a {
+    color: #ffe28a;
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    padding-right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    user-select: none;
+}
+
+.icon-eye {
+    width: 22px;
+    height: 22px;
+    color: #888;
+    display: block;
+}
+
+.field-error {
+    color: #ea8481;
+    font-size: 13px;
+    margin: 4px 0 0;
+    text-align: left;
+}
+
+.input-error {
+    border: 2px solid #d9534f !important;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 35px 40px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    font-family: 'Kanit', Arial, sans-serif;
+}
+
+.modal-box h2 {
+    color: #3A6EA5;
+    margin: 15px 0 8px;
+}
+
+.modal-box p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.modal-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    margin: 0 auto;
+}
+
+.modal-icon.success {
+    background: #4CAF50;
+}
+
+.modal-icon.warning {
+    background: #f0ad4e;
+}
+
+.modal-box .btn-primary {
+    width: 100%;
+}
+
+.modal-link {
+    display: block;
+    margin-top: 12px;
+    color: #3A6EA5;
+    font-weight: 600;
+    text-decoration: none;
+}

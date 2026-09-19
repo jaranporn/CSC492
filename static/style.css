@@ -5,17 +5,15 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: red;
+    background: rgb(125, 102, 239);
 }
 
 .landing-page {
     min-height: 100vh;
     background: #376da5;
-
     display: flex;
     justify-content: center;
     align-items: center;
-
     text-align: center;
 }
 
@@ -26,9 +24,7 @@ body {
 
 .hero h1 {
     margin: 0;
-
     color: #ffe28a;
-
     font-size: 42px;
     line-height: 1.25;
     font-weight: bold;
@@ -36,33 +32,118 @@ body {
 
 .english-title {
     margin-top: 10px;
-
     color: white;
-
     font-size: 22px;
 }
 
-
 .start-button {
     display: inline-block;
-
     margin-top: 40px;
-
     padding: 14px 35px;
-
     background: #ffe28a;
     color: #376da5;
-
     border-radius: 16px;
-
     text-decoration: none;
-
     font-size: 24px;
     font-weight: bold;
-
     transition: 0.2s;
 }
 
 .start-button:hover {
     transform: scale(1.05);
+}
+
+.index-page {
+    font-family: 'Kanit', 'Arial', sans-serif;
+    background: #ffffff;
+    padding: 30px 50px;
+}
+
+.index-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.index-topbar h1 {
+    color: #3A6EA5;
+    font-size: 22px;
+}
+
+.btn-pill {
+    background-color: #3A6EA5;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.index-panels {
+    display: flex;
+    gap: 30px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.panel {
+    flex: 1;
+    max-width: 520px;
+    min-height: 500px;
+    border: 2px solid #3A6EA5;
+    border-radius: 20px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+
+}
+
+.panel h2 {
+    color: #3A6EA5;
+}
+
+.dashed-box {
+    border: 2px dashed #3A6EA5;
+    border-radius: 10px;
+    height: 280px;
+    padding: 20px;
+    margin: 15px 0;
+    overflow-y: auto;
+}
+
+.placeholder-text {
+    color: #999;
+}
+
+.file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #3A6EA5;
+    margin-bottom: 15px;
+}
+
+.btn-yellow {
+    background-color: #FCE39A;
+    color: #3A6EA5;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+
+}
+
+.btn-yellow.small {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+.btn-center {
+    text-align: center;
 }

@@ -4,9 +4,11 @@ from livereload import Server
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-
 app.secret_key = "ai-lesson-secret-key"
 
+app.debug = True
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 def get_db():
     conn = sqlite3.connect("users.db")
@@ -16,7 +18,6 @@ def get_db():
 
 def init_db():
     conn = get_db()
-
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,7 +26,6 @@ def init_db():
             password TEXT NOT NULL
         )
     """)
-
     conn.commit()
     conn.close()
 
@@ -33,95 +33,105 @@ def init_db():
 def home():
     return render_template("index.html")
 
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    errors = {}
 
     if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
 
-        name = request.form["name"]
-        email = request.form["email"]
-        password = request.form["password"]
+        if not name:
+            errors["name"] = "กรุณากรอกชื่อ"
 
-        hashed_password = generate_password_hash(password)
+        if not email or "@" not in email or "." not in email:
+            errors["email"] = "อีเมลไม่ถูกต้อง"
 
-        conn = get_db()
+        if len(password) < 8:
+            errors["password"] = "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
 
-        try:
-            conn.execute(
-                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-                (name, email, hashed_password)
-            )
+        if not errors:
+            hashed_password = generate_password_hash(password)
+            conn = get_db()
+            try:
+                conn.execute(
+                    "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+                    (name, email, hashed_password)
+                )
+                conn.commit()
+                conn.close()
+                return redirect(url_for("login", registered="1"))
 
-            conn.commit()
-            conn.close()
+            except sqlite3.IntegrityError:
+                conn.close()
+                errors["email"] = "อีเมลนี้ถูกใช้งานแล้ว"
 
-            return redirect(url_for("login"))
+        return render_template("register.html", errors=errors,
+                                name=name, email=email)
 
-        except sqlite3.IntegrityError:
-            conn.close()
-            return "อีเมลนี้ถูกใช้งานแล้ว"
+    return render_template("register.html", errors=errors)
 
-    return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    not_registered = False
+    password_error = None
+
+    just_registered = request.args.get("registered") == "1"
 
     if request.method == "POST":
-
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
 
         conn = get_db()
-
         user = conn.execute(
-            "SELECT * FROM users WHERE email = ?",
-            (email,)
+            "SELECT * FROM users WHERE email = ?", (email,)
         ).fetchone()
-
         conn.close()
 
-        if user and check_password_hash(user["password"], password):
+        if not user:
+            not_registered = True
 
+        elif not check_password_hash(user["password"], password):
+            password_error = "รหัสผ่านไม่ถูกต้อง"
+
+        else:
             session["user_id"] = user["id"]
             session["user_name"] = user["name"]
+            return render_template("login.html", login_success=True)
 
-            return redirect(url_for("dashboard"))
-
-        return "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
-
-    return render_template("login.html")
+    return render_template(
+        "login.html",
+        not_registered=not_registered,
+        password_error=password_error,
+        just_registered=just_registered
+    )
 
 
 @app.route("/dashboard")
 def dashboard():
-
     if "user_id" not in session:
         return redirect(url_for("login"))
+    return render_template("dashboard.html")
 
-    return f"""
-    <h1>สวัสดี {session["user_name"]}</h1>
-    <p>เข้าสู่ระบบสำเร็จแล้ว</p>
-    <a href="/logout">ออกจากระบบ</a>
-    """
 
 @app.route("/logout")
-
 def logout():
-
     session.clear()
-
     return redirect(url_for("login"))
 
-if __name__ == "__main__":
-    server = Server(app)
 
-    server.watch("templates", delay=0.5)
-    server.watch("static", delay=0.5)
+if __name__ == "__main__":
+    init_db()
+
+    server = Server(app)
+    server.watch("templates/*.html")
+    server.watch("static/*.css")
 
     server.serve(
         host="127.0.0.1",
         port=5000,
-        debug=False,
+        debug=True,
         live_css=True
     )
