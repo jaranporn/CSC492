@@ -116,7 +116,7 @@ body {
 }
 
 .placeholder-text {
-    color: #999;
+    color: #757575;
 }
 
 .file-row {
@@ -147,3 +147,13 @@ body {
 .btn-center {
     text-align: center;
 }
+#summaryBox h3, #summaryBox h4 {color: #3b6ea5; margin: 1em 0 .4em;}
+#summaryBox ul {padding-left: 1.4em;}
+#summaryBox pre {background: #f4f7fb; padding: 10px; border-radius: 8px; overflow-x: auto;}
+#summaryBox code {font-family: Consolas, monospace;}
+#summaryBox hr {border: none; border-top: 1px dashed #c9d6e8;}
+#summaryBox {line-height: 1.7;}
+#summaryBox > :first-child { margin-top: 0;}
+#summaryBox {line-height: 1.7;color: #222;}
+#summaryBox .placeholder-text,
+#summaryBox.placeholder-text {color: #757575;}

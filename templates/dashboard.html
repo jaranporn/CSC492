@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+
     <meta charset="UTF-8">
     <title>AI Lesson Summarizer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
 </head>
 <body class="index-page">
     <header class="index-topbar">
@@ -13,29 +18,72 @@
 
     <main class="index-panels">
         <section class="panel">
-    <h2>เนื้อหาบทเรียน</h2>
-    <div class="dashed-box">
-        <p class="placeholder-text">ใส่ข้อความเพื่อสรุปเนื้อหา</p>
-    </div>
-    <div class="file-row">
-        <span class="file-icon">📁</span>
-        <span>เลือกไฟล์ รองรับ PDF / TXT</span>
-    </div>
-    <div class="btn-center">
-        <button class="btn-yellow">สรุปเนื้อหา</button>
-    </div>
-</section>
+            <h2>เนื้อหาบทเรียน</h2>
+            <div class="dashed-box">
+                <textarea id="lessonText" placeholder="ใส่ข้อความเพื่อสรุปเนื้อหา"
+                    style="width:100%;height:100%;border:none;background:transparent;resize:none;outline:none;font:inherit;"></textarea>
+            </div>
+            <label class="file-row" style="cursor:pointer">
+                <span class="file-icon">📁</span>
+                <span id="fileName">เลือกไฟล์ รองรับ PDF / TXT</span>
+                <input type="file" id="lessonFile" accept=".pdf,.txt" hidden>
+            </label>
+            <div class="btn-center">
+                <button class="btn-yellow" id="btnSummarize">สรุปเนื้อหา</button>
+            </div>
+        </section>
 
-<section class="panel">
-    <h2>ผลการสรุป</h2>
-    <div class="dashed-box">
-        <p class="placeholder-text">แสดงเนื้อหาที่สรุปแล้ว</p>
-    </div>
-    <div class="btn-center">
-        <button class="btn-yellow">สร้างแบบทดสอบ</button>
-    </div>
-</section>
-     
+        <section class="panel">
+            <h2>ผลการสรุป</h2>
+            
+        <div class="dashed-box" id="summaryBox">
+            <p class="placeholder-text">แสดงเนื้อหาที่สรุปแล้ว</p>
+        </div>
+
+        <div class="btn-center">
+            <button class="btn-yellow" id="btnQuiz">สร้างแบบทดสอบ</button>
+        </div>
+    </section>
+    
     </main>
+
+    <script>
+    const lessonText = document.getElementById('lessonText');
+    const lessonFile = document.getElementById('lessonFile');
+    const fileName = document.getElementById('fileName');
+    const btn = document.getElementById('btnSummarize');
+    const out = document.getElementById('summaryBox');   
+
+    lessonFile.addEventListener('change', () => {
+        const f = lessonFile.files[0];
+        fileName.textContent = f ? f.name : 'เลือกไฟล์ รองรับ PDF / TXT';
+    });
+
+    btn.addEventListener('click', async () => {
+        const fd = new FormData();
+        fd.append('text', lessonText.value);
+        if (lessonFile.files[0]) fd.append('file', lessonFile.files[0]);
+
+        btn.disabled = true;
+        btn.textContent = 'กำลังสรุป...';
+        out.textContent = 'กำลังประมวลผล กรุณารอสักครู่...';
+
+        try {
+            const res = await fetch('/api/summarize', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (res.ok) {
+                out.innerHTML = DOMPurify.sanitize(marked.parse(data.summary));
+                window.currentSummary = data.summary;   
+            } else {
+                out.textContent = '⚠️ ' + data.error;
+            }
+        } catch (e) {
+            out.textContent = '⚠️ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'สรุปเนื้อหา';
+        }
+    });
+    </script>
 </body>
 </html>

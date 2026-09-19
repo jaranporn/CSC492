@@ -1,37 +1,71 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import sqlite3
-from livereload import Server
+import os
+
+from dotenv import load_dotenv
+from flask import (Flask, render_template, request, redirect,
+                   url_for, session, jsonify)
 from werkzeug.security import generate_password_hash, check_password_hash
 
-app = Flask(__name__)
-app.secret_key = "ai-lesson-secret-key"
+from extract import extract_text
 
-app.debug = True
-app.config["TEMPLATES_AUTO_RELOAD"] = True
-app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+load_dotenv()
+
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "dev-only-change-me")
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    import psycopg2
+    import psycopg2.extras
+    IntegrityError = psycopg2.IntegrityError
+    ID_COLUMN = "SERIAL PRIMARY KEY"
+    PLACEHOLDER = "%s"
+else:
+    import sqlite3
+    IntegrityError = sqlite3.IntegrityError
+    ID_COLUMN = "INTEGER PRIMARY KEY AUTOINCREMENT"
+    PLACEHOLDER = "?"
+
 
 def get_db():
+    if DATABASE_URL:
+        return psycopg2.connect(
+            DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     conn = sqlite3.connect("users.db")
     conn.row_factory = sqlite3.Row
     return conn
 
 
-def init_db():
+def run(sql, params=(), fetchone=False):
     conn = get_db()
-    conn.execute("""
+    try:
+        cur = conn.cursor()
+        cur.execute(sql.replace("?", PLACEHOLDER), params)
+        row = cur.fetchone() if fetchone else None
+        conn.commit()
+        return row
+    finally:
+        conn.close()
+
+
+def init_db():
+    run(f"""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {ID_COLUMN},
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL
         )
     """)
-    conn.commit()
-    conn.close()
+
+
+init_db()
+
 
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -53,22 +87,15 @@ def register():
 
         if not errors:
             hashed_password = generate_password_hash(password)
-            conn = get_db()
             try:
-                conn.execute(
-                    "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-                    (name, email, hashed_password)
-                )
-                conn.commit()
-                conn.close()
+                run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+                    (name, email, hashed_password))
                 return redirect(url_for("login", registered="1"))
-
-            except sqlite3.IntegrityError:
-                conn.close()
+            except IntegrityError:
                 errors["email"] = "อีเมลนี้ถูกใช้งานแล้ว"
 
         return render_template("register.html", errors=errors,
-                                name=name, email=email)
+                               name=name, email=email)
 
     return render_template("register.html", errors=errors)
 
@@ -84,11 +111,7 @@ def login():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
 
-        conn = get_db()
-        user = conn.execute(
-            "SELECT * FROM users WHERE email = ?", (email,)
-        ).fetchone()
-        conn.close()
+        user = run("SELECT * FROM users WHERE email = ?", (email,), fetchone=True)
 
         if not user:
             not_registered = True
@@ -116,14 +139,45 @@ def dashboard():
     return render_template("dashboard.html")
 
 
+@app.route("/api/summarize", methods=["POST"])
+def api_summarize():
+    if "user_id" not in session:
+        return jsonify(error="กรุณาเข้าสู่ระบบ"), 401
+
+    text = request.form.get("text", "").strip()
+    f = request.files.get("file")
+
+    try:
+        if f and f.filename:
+            text = extract_text(f)
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+
+    if len(text) < 50:
+        return jsonify(error="เนื้อหาสั้นเกินไป หรืออ่านข้อความจากไฟล์ไม่ได้"), 400
+
+    text = text[:30000]
+
+    try:
+        from llm import summarize_long
+        summary = summarize_long(text)
+    except Exception:
+        app.logger.exception("summarize failed")
+        return jsonify(error="เรียก AI ไม่สำเร็จ ลองใหม่อีกครั้ง"), 502
+
+    return jsonify(summary=summary)
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
-
 if __name__ == "__main__":
-    init_db()
+    from livereload import Server
+
+    app.debug = True
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
     server = Server(app)
     server.watch("templates/*.html")
