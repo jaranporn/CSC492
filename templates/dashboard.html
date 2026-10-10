@@ -9,11 +9,26 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 
+    <style>
+    .qm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:999}
+    .qm-overlay.show{display:flex}
+    .qm-box{background:#fff;border-radius:20px;padding:28px;max-width:360px;width:90%;font-family:inherit}
+    .qm-box h3{margin:0 0 18px;text-align:center;color:#36689f}
+    .qm-group{margin-bottom:18px}
+    .qm-group p{margin:0 0 8px;font-weight:600;color:#444}
+    .qm-group label{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer}
+    .qm-select{width:100%;padding:10px 14px;border-radius:999px;border:2px solid #ccc;font:1rem inherit;background:#fff}
+    .qm-actions{display:flex;gap:12px;justify-content:center;margin-top:10px}
+    .qm-actions button{border:none;border-radius:999px;padding:10px 22px;font:600 1rem inherit;cursor:pointer}
+    .qm-cancel{background:#eee;color:#555}
+    .qm-confirm{background:#ffe08a;color:#36689f}
+    </style>
+
 </head>
 <body class="index-page">
     <header class="index-topbar">
         <h1>AI-Based Lesson Summarizer and Quiz Generator</h1>
-        <a href="#" class="btn-pill">บัญชีผู้ใช้</a>
+        <a href="{{ url_for('account') }}" class="btn-pill">บัญชีผู้ใช้</a>
     </header>
 
     <main class="index-panels">
@@ -46,6 +61,38 @@
     </section>
     
     </main>
+
+    <!-- ใหม่: หน้าต่างตั้งค่าแบบทดสอบ -->
+    <div class="qm-overlay" id="quizModalOverlay">
+      <div class="qm-box">
+        <h3>ตั้งค่าแบบทดสอบ</h3>
+        <div class="qm-group">
+          <p>ระดับความยาก</p>
+          <label><input type="radio" name="qmDifficulty" value="easy"> ง่าย</label>
+          <label><input type="radio" name="qmDifficulty" value="medium" checked> ปานกลาง</label>
+          <label><input type="radio" name="qmDifficulty" value="hard"> ยาก</label>
+        </div>
+        <div class="qm-group">
+          <p>รูปแบบข้อสอบ</p>
+          <label><input type="checkbox" id="qmTypeMc" checked> แบบเลือกคำตอบ</label>
+          <label><input type="checkbox" id="qmTypeFill"> แบบเติมคำ</label>
+        </div>
+        <div class="qm-group">
+          <p>จำนวนข้อ</p>
+          <select id="qmCount" class="qm-select">
+            <option value="3">3 ข้อ</option>
+            <option value="5" selected>5 ข้อ</option>
+            <option value="10">10 ข้อ</option>
+            <option value="15">15 ข้อ</option>
+            <option value="20">20 ข้อ</option>
+          </select>
+        </div>
+        <div class="qm-actions">
+          <button type="button" class="qm-cancel" id="qmCancel">ยกเลิก</button>
+          <button type="button" class="qm-confirm" id="qmConfirm">สร้างแบบทดสอบ</button>
+        </div>
+      </div>
+    </div>
 
     <script>
     const lessonText = document.getElementById('lessonText');
@@ -84,6 +131,64 @@
             btn.textContent = 'สรุปเนื้อหา';
         }
     });
+
+    const btnQuiz = document.getElementById('btnQuiz');
+    const qmOverlay = document.getElementById('quizModalOverlay');
+
+    btnQuiz.addEventListener('click', () => {
+        if (!window.currentSummary) {
+            alert('กรุณาสรุปเนื้อหาก่อนสร้างแบบทดสอบ');
+            return;
+        }
+        qmOverlay.classList.add('show');
+    });
+
+    document.getElementById('qmCancel').addEventListener('click', () => {
+        qmOverlay.classList.remove('show');
+    });
+
+    document.getElementById('qmConfirm').addEventListener('click', async () => {
+        const difficulty = document.querySelector('input[name="qmDifficulty"]:checked').value;
+        const wantMc = document.getElementById('qmTypeMc').checked;
+        const wantFill = document.getElementById('qmTypeFill').checked;
+        const count = parseInt(document.getElementById('qmCount').value, 10);
+
+        if (!wantMc && !wantFill) {
+            alert('กรุณาเลือกรูปแบบข้อสอบอย่างน้อย 1 แบบ');
+            return;
+        }
+
+        qmOverlay.classList.remove('show');
+        btnQuiz.disabled = true;
+        btnQuiz.textContent = 'กำลังสร้างข้อสอบ...';
+
+        try {
+            const res = await fetch('/api/quiz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    summary: window.currentSummary,
+                    difficulty,
+                    types: { mc: wantMc, fill: wantFill },
+                    count
+                })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                sessionStorage.setItem('quiz', JSON.stringify(data.quiz));
+                location.href = '/quiz';
+            } else {
+                alert(data.error);
+            }
+        } catch (e) {
+            alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+        } finally {
+            btnQuiz.disabled = false;
+            btnQuiz.textContent = 'สร้างแบบทดสอบ';
+        }
+    });
+    
     </script>
 </body>
 </html>

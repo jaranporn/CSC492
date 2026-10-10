@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='quiz.css') }}">
+<title>บัญชีผู้ใช้</title>
+<style>
+  .profile-card{background:var(--card);border-radius:28px;padding:24px;margin-bottom:24px;text-align:center}
+  .profile-name{font-size:1.6rem;font-weight:700;color:var(--blue);margin:0 0 6px}
+  .profile-email{color:#777;margin:0}
+  .section-title{color:var(--blue);font-size:1.4rem;margin:28px 0 16px}
+  .history-date{color:#999;font-size:.95rem;margin:0 0 10px}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="btn btn-yellow" href="{{ url_for('dashboard') }}">ย้อนกลับ</a>
+    <h1 class="title">บัญชีผู้ใช้</h1>
+    <span></span>
+  </header>
+
+  <section class="profile-card">
+    <p class="profile-name">{{ user.name }}</p>
+    <p class="profile-email">{{ user.email }}</p>
+  </section>
+
+  <section class="stat-cards">
+    <div class="stat">จำนวนครั้งที่ทำแบบทดสอบ<b class="n-total">{{ attempts }}</b></div>
+    <div class="stat">คะแนนเฉลี่ย<b class="n-ok">{{ avg_pct }}%</b></div>
+    <div class="stat">ข้อที่ทำทั้งหมด<b class="n-bad">{{ total_q }}</b></div>
+  </section>
+
+  <h2 class="section-title">ประวัติการทำแบบทดสอบล่าสุด</h2>
+
+  {% if history %}
+    {% for h in history %}
+    <div class="card">
+      <p class="history-date">{{ h.created_at }}</p>
+      <div class="row {{ 'ok' if h.pct >= 50 else 'bad' }}">
+        <span class="mark">{{ h.pct }}%</span>
+        <span>ตอบถูก {{ h.correct }} จาก {{ h.total }} ข้อ</span>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p class="q-text">ยังไม่มีประวัติการทำแบบทดสอบ ลองสรุปเนื้อหาแล้วทำแบบทดสอบดูค่ะ</p>
+  {% endif %}
+</main>
+</body>
+</html>

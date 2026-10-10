@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='quiz.css') }}">
+<title>แบบทดสอบ</title>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="btn btn-yellow" href="/dashboard">ย้อนกลับ</a>
+    <h1 class="title">แบบทดสอบ</h1>
+    <span class="counter" id="counter"></span>
+  </header>
+
+  <section id="questions"></section>
+
+  <div class="actions">
+    <button class="btn btn-blue" id="checkBtn" type="button">ตรวจคำตอบ</button>
+    <button class="btn btn-outline" id="resetBtn" type="button">เริ่มทำใหม่</button>
+  </div>
+</main>
+
+<script>
+// quiz item รูปแบบปรนัย: {type:"mc", question, choices:[4 ข้อ], answer:0-3, explanation}
+// quiz item รูปแบบเติมคำ: {type:"fill", question, answer:"คำตอบ", accepted:[...], explanation}
+const quiz = JSON.parse(sessionStorage.getItem('quiz') || '[]');
+const answers = new Array(quiz.length).fill(null);
+const box = document.getElementById('questions');
+const counter = document.getElementById('counter');
+
+function updateCounter(){
+  const done = answers.filter(a => a !== null).length;
+  counter.textContent = 'ตอบแล้ว ' + done + ' / ' + quiz.length;
+}
+
+function render(){
+  box.innerHTML = '';
+  quiz.forEach((q, i) => {
+    const block = document.createElement('div');
+    block.className = 'q-block';
+
+    const t = document.createElement('p');
+    t.className = 'q-text';
+    t.textContent = 'ข้อที่ ' + (i + 1) + ': ' + q.question;
+    block.appendChild(t);
+
+    if (q.type === 'fill') {
+      // ---------- ใหม่: ช่องเติมคำ ----------
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'fill-input';
+      input.placeholder = 'พิมพ์คำตอบของคุณ';
+      input.addEventListener('input', () => {
+        const v = input.value.trim();
+        answers[i] = v === '' ? null : v;
+        updateCounter();
+      });
+      block.appendChild(input);
+      // ----------------------------------------
+    } else {
+      q.choices.forEach((c, j) => {
+        const label = document.createElement('label');
+        label.className = 'option';
+        const inputEl = document.createElement('input');
+        inputEl.type = 'radio';
+        inputEl.name = 'q' + i;
+        inputEl.addEventListener('change', () => { answers[i] = j; updateCounter(); });
+        const span = document.createElement('span');
+        span.textContent = c;           // textContent กัน XSS จากข้อความที่ AI สร้าง
+        label.append(inputEl, span);
+        block.appendChild(label);
+      });
+    }
+    box.appendChild(block);
+  });
+  updateCounter();
+}
+
+document.getElementById('checkBtn').addEventListener('click', () => {
+  const left = answers.filter(a => a === null).length;
+  if (left > 0) { alert('ยังตอบไม่ครบ เหลืออีก ' + left + ' ข้อ'); return; }
+  sessionStorage.setItem('quizAnswers', JSON.stringify(answers));
+  location.href = '/quiz/result';
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  answers.fill(null);
+  render();
+});
+
+if (quiz.length === 0) {
+  box.innerHTML = '<p class="q-text">ยังไม่มีแบบทดสอบ กลับไปสร้างจากหน้าหลักก่อน</p>';
+} else { render(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='quiz.css') }}">
+<title>สถิติแบบทดสอบ</title>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="btn btn-blue" href="/dashboard">หน้าหลัก</a>
+    <h1 class="title">สถิติแบบทดสอบ</h1>
+    <a class="btn btn-blue" href="/account">บัญชีผู้ใช้</a>
+  </header>
+
+  <section class="stat-cards">
+    <div class="stat">จำนวนข้อทั้งหมด<b class="n-total" id="total">0</b></div>
+    <div class="stat">จำนวนข้อที่ตอบถูก<b class="n-ok" id="ok">0</b></div>
+    <div class="stat">จำนวนข้อที่ตอบผิด<b class="n-bad" id="bad">0</b></div>
+  </section>
+
+  <section class="chart-box">
+    <div class="donut" id="donut">
+      <div class="donut-center"><b id="pct">0%</b><span>ถูกต้อง</span></div>
+    </div>
+    <div class="legend">
+      <p><i class="dot" style="background:#009a4e"></i><span id="okTxt"></span></p>
+      <p><i class="dot" style="background:#ff3b1d"></i><span id="badTxt"></span></p>
+    </div>
+  </section>
+</main>
+
+<script>
+const quiz = JSON.parse(sessionStorage.getItem('quiz') || '[]');
+const answers = JSON.parse(sessionStorage.getItem('quizAnswers') || '[]');
+
+const total = quiz.length;
+const ok = quiz.filter((q, i) => answers[i] === q.answer).length;
+const bad = total - ok;
+const okPct = total ? Math.round(ok * 100 / total) : 0;
+const badPct = total ? 100 - okPct : 0;
+
+document.getElementById('total').textContent = total;
+document.getElementById('ok').textContent = ok;
+document.getElementById('bad').textContent = bad;
+document.getElementById('pct').textContent = okPct + '%';
+document.getElementById('okTxt').textContent = 'ตอบถูก ' + okPct + '%';
+document.getElementById('badTxt').textContent = 'ตอบผิด ' + badPct + '%';
+document.getElementById('donut').style.background =
+  'conic-gradient(#009a4e 0 ' + okPct + '%, #ff3b1d ' + okPct + '% 100%)';
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='quiz.css') }}">
+<title>เฉลยแบบทดสอบ</title>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="btn btn-yellow" href="/quiz">ย้อนกลับ</a>
+    <h1 class="title">เฉลยแบบทดสอบ</h1>
+    <span></span>
+  </header>
+
+  <section id="result"></section>
+
+  <div class="actions">
+    <a class="btn btn-blue" href="/quiz/stats">ดูสถิติ</a>
+  </div>
+</main>
+
+<script>
+const quiz = JSON.parse(sessionStorage.getItem('quiz') || '[]');
+const answers = JSON.parse(sessionStorage.getItem('quizAnswers') || '[]');
+const root = document.getElementById('result');
+
+function row(cls, mark, text, choiceText){
+  const d = document.createElement('div');
+  d.className = 'row ' + cls;
+  const m = document.createElement('span'); m.className = 'mark'; m.textContent = mark;
+  const s = document.createElement('span'); s.textContent = text + ' ';
+  const sm = document.createElement('small'); sm.textContent = '(' + choiceText + ')';
+  s.appendChild(sm);
+  d.append(m, s);
+  return d;
+}
+
+// ---------- ใหม่: แถวผลลัพธ์แบบไม่มีวงเล็บ ใช้กับข้อเติมคำ ----------
+function simpleRow(cls, mark, text){
+  const d = document.createElement('div');
+  d.className = 'row ' + cls;
+  const m = document.createElement('span'); m.className = 'mark'; m.textContent = mark;
+  const s = document.createElement('span'); s.textContent = text;
+  d.append(m, s);
+  return d;
+}
+
+function normalize(s){
+  return (s || '').toString().trim().toLowerCase();
+}
+
+function isCorrectFill(mine, q){
+  const n = normalize(mine);
+  if (n === normalize(q.answer)) return true;
+  if (Array.isArray(q.accepted)) {
+    return q.accepted.some(a => normalize(a) === n);
+  }
+  return false;
+}
+// ---------------------------------------------------------------------
+
+let correctCount = 0;
+
+quiz.forEach((q, i) => {
+  const mine = answers[i];
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const t = document.createElement('p');
+  t.className = 'q-text';
+  t.textContent = 'ข้อที่ ' + (i + 1) + ': ' + q.question;
+  card.appendChild(t);
+
+  if (q.type === 'fill') {
+    // ---------- ใหม่: ตรวจและแสดงผลข้อเติมคำ ----------
+    if (isCorrectFill(mine, q)) {
+      correctCount++;
+      card.appendChild(simpleRow('ok', '✓', 'คุณตอบ "' + (mine || '') + '" – ถูกต้อง'));
+    } else {
+      card.appendChild(simpleRow('bad', '✕', 'คุณตอบ "' + (mine || '(ไม่ได้ตอบ)') + '" – ไม่ถูกต้อง'));
+      card.appendChild(simpleRow('ok', '✓', 'คำตอบที่ถูกต้องคือ "' + q.answer + '"'));
+    }
+    // -----------------------------------------------------
+  } else {
+    if (mine === q.answer) {
+      correctCount++;
+      card.appendChild(row('ok', '✓', 'ตัวเลือกที่ ' + (mine + 1) + ' – คุณตอบถูกต้อง', q.choices[mine]));
+    } else {
+      card.appendChild(row('bad', '✕', 'คุณเลือกตัวเลือกที่ ' + (mine + 1) + ' – ไม่ถูกต้อง', q.choices[mine]));
+      card.appendChild(row('ok', '✓', 'ตัวเลือกที่ ' + (q.answer + 1) + ' – ถูกต้อง', q.choices[q.answer]));
+    }
+  }
+
+  const e = document.createElement('p');
+  e.className = 'explain';
+  e.textContent = 'คำอธิบาย : ' + (q.explanation || '-');
+  card.appendChild(e);
+
+  root.appendChild(card);
+});
+
+if (quiz.length > 0) {
+  fetch('/api/quiz/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ total: quiz.length, correct: correctCount })
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>
