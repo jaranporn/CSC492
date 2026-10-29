@@ -1,4 +1,5 @@
 import os, json, re
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -45,10 +46,12 @@ def split_chunks(text, size=3000):
     return chunks
 
 def summarize_long(text):
-    chunks = split_chunks(text)
+    # แก้: ใช้ชิ้นใหญ่ขึ้น (6000) และเรียก AI หลายชิ้นพร้อมกัน เพื่อไม่ให้เกิน timeout
+    chunks = split_chunks(text, size=6000)
     if len(chunks) == 1:
         return summarize(text)
-    parts = [summarize(c) for c in chunks]
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        parts = list(ex.map(summarize, chunks))
     return summarize("\n\n".join(parts))
 
 def _parse_json(raw):
