@@ -36,8 +36,9 @@
 const quiz = JSON.parse(sessionStorage.getItem('quiz') || '[]');
 const answers = JSON.parse(sessionStorage.getItem('quizAnswers') || '[]');
 
-const total = quiz.length;
-const ok = quiz.filter((q, i) => answers[i] === q.answer).length;
+const score = JSON.parse(sessionStorage.getItem('quizScore') || '{"total":0,"correct":0}');
+const total = score.total;
+const ok = score.correct;
 const bad = total - ok;
 const okPct = total ? Math.round(ok * 100 / total) : 0;
 const badPct = total ? 100 - okPct : 0;

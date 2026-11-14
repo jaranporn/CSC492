@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
@@ -63,7 +64,6 @@ def init_db():
             password TEXT NOT NULL
         )
     """)
-    # ---------- ใหม่: ตารางประวัติการทำแบบทดสอบ ----------
     run(f"""
         CREATE TABLE IF NOT EXISTS quiz_history (
             id {ID_COLUMN},
@@ -73,7 +73,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    # -------------------------------------------------------
+    
 
 
 init_db()
@@ -352,8 +352,23 @@ def account():
     for r in rows or []:
         t, c = r["total"], r["correct"]
         pct = round(c * 100 / t) if t else 0
+
+        raw_time = r["created_at"]
+        if raw_time:
+            if isinstance(raw_time, str):
+                try:
+                    dt = datetime.fromisoformat(raw_time.split(".")[0])
+                except ValueError:
+                    dt = datetime.strptime(raw_time.split(".")[0], "%Y-%m-%d %H:%M:%S")
+            else:
+                dt = raw_time
+            th_time = dt + timedelta(hours=7)
+            created_str = th_time.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            created_str = "-"
+
         history.append(
-            {"total": t, "correct": c, "pct": pct, "created_at": r["created_at"]}
+            {"total": t, "correct": c, "pct": pct, "created_at": created_str}
         )
 
     return render_template(

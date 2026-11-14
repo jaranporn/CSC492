@@ -38,7 +38,6 @@ function row(cls, mark, text, choiceText){
   return d;
 }
 
-// ---------- ใหม่: แถวผลลัพธ์แบบไม่มีวงเล็บ ใช้กับข้อเติมคำ ----------
 function simpleRow(cls, mark, text){
   const d = document.createElement('div');
   d.className = 'row ' + cls;
@@ -60,7 +59,6 @@ function isCorrectFill(mine, q){
   }
   return false;
 }
-// ---------------------------------------------------------------------
 
 let correctCount = 0;
 
@@ -75,7 +73,7 @@ quiz.forEach((q, i) => {
   card.appendChild(t);
 
   if (q.type === 'fill') {
-    // ---------- ใหม่: ตรวจและแสดงผลข้อเติมคำ ----------
+   
     if (isCorrectFill(mine, q)) {
       correctCount++;
       card.appendChild(simpleRow('ok', '✓', 'คุณตอบ "' + (mine || '') + '" – ถูกต้อง'));
@@ -83,7 +81,7 @@ quiz.forEach((q, i) => {
       card.appendChild(simpleRow('bad', '✕', 'คุณตอบ "' + (mine || '(ไม่ได้ตอบ)') + '" – ไม่ถูกต้อง'));
       card.appendChild(simpleRow('ok', '✓', 'คำตอบที่ถูกต้องคือ "' + q.answer + '"'));
     }
-    // -----------------------------------------------------
+  
   } else {
     if (mine === q.answer) {
       correctCount++;
@@ -103,6 +101,8 @@ quiz.forEach((q, i) => {
 });
 
 if (quiz.length > 0) {
+  sessionStorage.setItem('quizScore', JSON.stringify({ total: quiz.length, correct: correctCount }));
+
   fetch('/api/quiz/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

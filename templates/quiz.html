@@ -24,8 +24,7 @@
 </main>
 
 <script>
-// quiz item รูปแบบปรนัย: {type:"mc", question, choices:[4 ข้อ], answer:0-3, explanation}
-// quiz item รูปแบบเติมคำ: {type:"fill", question, answer:"คำตอบ", accepted:[...], explanation}
+
 const quiz = JSON.parse(sessionStorage.getItem('quiz') || '[]');
 const answers = new Array(quiz.length).fill(null);
 const box = document.getElementById('questions');
@@ -48,7 +47,7 @@ function render(){
     block.appendChild(t);
 
     if (q.type === 'fill') {
-      // ---------- ใหม่: ช่องเติมคำ ----------
+    
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'fill-input';
@@ -59,7 +58,7 @@ function render(){
         updateCounter();
       });
       block.appendChild(input);
-      // ----------------------------------------
+     
     } else {
       q.choices.forEach((c, j) => {
         const label = document.createElement('label');
@@ -69,7 +68,7 @@ function render(){
         inputEl.name = 'q' + i;
         inputEl.addEventListener('change', () => { answers[i] = j; updateCounter(); });
         const span = document.createElement('span');
-        span.textContent = c;           // textContent กัน XSS จากข้อความที่ AI สร้าง
+        span.textContent = c;           
         label.append(inputEl, span);
         block.appendChild(label);
       });

@@ -1,4 +1,4 @@
-import os, json, re
+import os, json, re, time
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -9,8 +9,10 @@ client = OpenAI(
     base_url=os.getenv("TYPHOON_BASE_URL"),
 )
 MODEL = os.getenv("TYPHOON_MODEL")
+MERGE_SUMMARY = os.getenv("SUMMARY_MERGE") == "1"
 
 def ask(system, user, max_tokens=3000, temperature=0.3):
+    t0 = time.perf_counter()
     r = client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -23,6 +25,12 @@ def ask(system, user, max_tokens=3000, temperature=0.3):
     choice = r.choices[0]
     if choice.finish_reason == "length":
         print("WARNING: output truncated")
+    usage = getattr(r, "usage", None)
+    print(
+        f"[llm] {time.perf_counter() - t0:.1f}s, "
+        f"output tokens: {getattr(usage, 'completion_tokens', '?')}",
+        flush=True,
+    )
     return choice.message.content
 
 def summarize(text):
@@ -30,6 +38,16 @@ def summarize(text):
     user = (
         "สรุปเนื้อหาต่อไปนี้ให้กระชับ ตัดส่วนที่ซ้ำซ้อน "
         "คงใจความสำคัญไว้ จัดเป็นหัวข้อและข้อย่อย\n\n" + text
+    )
+    return ask(system, user)
+
+def summarize_part(text):
+    system = "คุณเป็นผู้ช่วยสรุปบทเรียนภาษาไทย ตอบเป็นภาษาไทยเท่านั้น"
+    user = (
+        "ข้อความต่อไปนี้เป็นเพียงส่วนหนึ่งของบทเรียน สรุปให้กระชับ ตัดส่วนที่ซ้ำซ้อน "
+        "คงใจความสำคัญไว้ จัดเป็นหัวข้อและข้อย่อย "
+        "ใช้หัวข้อระดับ ### ไม่ต้องใส่เลขลำดับหน้าหัวข้อ "
+        "ไม่ต้องมีชื่อเรื่องรวม คำนำ หรือบทสรุปท้าย\n\n" + text
     )
     return ask(system, user)
 
@@ -46,13 +64,17 @@ def split_chunks(text, size=3000):
     return chunks
 
 def summarize_long(text):
-    # แก้: ใช้ชิ้นใหญ่ขึ้น (6000) และเรียก AI หลายชิ้นพร้อมกัน เพื่อไม่ให้เกิน timeout
     chunks = split_chunks(text, size=6000)
     if len(chunks) == 1:
         return summarize(text)
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        parts = list(ex.map(summarize, chunks))
-    return summarize("\n\n".join(parts))
+    workers = min(len(chunks), 6)
+    if MERGE_SUMMARY:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            parts = list(ex.map(summarize, chunks))
+        return summarize("\n\n".join(parts))
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        parts = list(ex.map(summarize_part, chunks))
+    return "\n\n".join(part.strip() for part in parts)
 
 def _parse_json(raw):
     raw = re.sub(r"```(?:json)?", "", raw).strip()

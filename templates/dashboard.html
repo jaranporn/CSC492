@@ -62,7 +62,6 @@
     
     </main>
 
-    <!-- ใหม่: หน้าต่างตั้งค่าแบบทดสอบ -->
     <div class="qm-overlay" id="quizModalOverlay">
       <div class="qm-box">
         <h3>ตั้งค่าแบบทดสอบ</h3>
@@ -80,7 +79,6 @@
         <div class="qm-group">
           <p>จำนวนข้อ</p>
           <select id="qmCount" class="qm-select">
-            <option value="3">3 ข้อ</option>
             <option value="5" selected>5 ข้อ</option>
             <option value="10">10 ข้อ</option>
             <option value="15">15 ข้อ</option>
@@ -106,6 +104,21 @@
         fileName.textContent = f ? f.name : 'เลือกไฟล์ รองรับ PDF / TXT';
     });
 
+    function formatElapsed(sec) {
+        if (sec < 60) return sec + ' วินาที';
+        return Math.floor(sec / 60) + ' นาที ' + (sec % 60) + ' วินาที';
+    }
+
+    function startTimer(el, label) {
+        const t0 = Date.now();
+        const show = () => {
+            el.textContent = label + ' (' + formatElapsed(Math.floor((Date.now() - t0) / 1000)) + ')';
+        };
+        show();
+        const id = setInterval(show, 1000);
+        return () => clearInterval(id);
+    }
+
     btn.addEventListener('click', async () => {
         const fd = new FormData();
         fd.append('text', lessonText.value);
@@ -113,7 +126,7 @@
 
         btn.disabled = true;
         btn.textContent = 'กำลังสรุป...';
-        out.textContent = 'กำลังประมวลผล กรุณารอสักครู่...';
+        const stopTimer = startTimer(out, 'กำลังประมวลผล กรุณารอสักครู่...');
 
         try {
             const res = await fetch('/api/summarize', { method: 'POST', body: fd });
@@ -127,6 +140,7 @@
         } catch (e) {
             out.textContent = '⚠️ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
         } finally {
+            stopTimer();
             btn.disabled = false;
             btn.textContent = 'สรุปเนื้อหา';
         }
@@ -160,7 +174,7 @@
 
         qmOverlay.classList.remove('show');
         btnQuiz.disabled = true;
-        btnQuiz.textContent = 'กำลังสร้างข้อสอบ...';
+        const stopQuizTimer = startTimer(btnQuiz, 'กำลังสร้างข้อสอบ...');
 
         try {
             const res = await fetch('/api/quiz', {
@@ -184,6 +198,7 @@
         } catch (e) {
             alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
         } finally {
+            stopQuizTimer();
             btnQuiz.disabled = false;
             btnQuiz.textContent = 'สร้างแบบทดสอบ';
         }
