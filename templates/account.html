@@ -6,12 +6,31 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='quiz.css') }}">
 <title>บัญชีผู้ใช้</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <style>
   .profile-card{background:var(--card);border-radius:28px;padding:24px;margin-bottom:24px;text-align:center}
   .profile-name{font-size:1.6rem;font-weight:700;color:var(--blue);margin:0 0 6px}
   .profile-email{color:#777;margin:0}
   .section-title{color:var(--blue);font-size:1.4rem;margin:28px 0 16px}
   .history-date{color:#999;font-size:.95rem;margin:0 0 10px}
+  .lesson-title{font-size:1.2rem;color:#222;margin:0 0 12px}
+  .history-questions{margin-top:14px}
+  .history-questions summary{cursor:pointer;color:var(--blue);font-weight:600}
+  .history-questions ol{margin:10px 0 0;padding-left:22px;color:#333;line-height:1.6}
+  .history-questions li{margin-bottom:12px}
+  .hq-ans,.hq-right{font-size:.95rem;margin-top:2px}
+  .hq-ok .hq-ans,.hq-right{color:#009a4e}
+  .hq-bad .hq-ans{color:#ff3b1d}
+  .sm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:999}
+  .sm-overlay.show{display:flex}
+  .sm-box{background:#fff;border-radius:24px;padding:24px 24px 20px;width:90%;max-width:720px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.2)}
+  .sm-title{margin:0 0 4px;font-size:1.3rem;color:var(--blue)}
+  .sm-date{margin:0 0 14px;color:#999;font-size:.9rem}
+  .sm-body{overflow-y:auto;line-height:1.7;color:#333;padding-right:6px}
+  .sm-body h1,.sm-body h2,.sm-body h3{color:var(--blue);margin:16px 0 8px}
+  .sm-body ul,.sm-body ol{padding-left:22px;margin:6px 0}
+  .sm-actions{text-align:center;margin-top:16px}
 </style>
 </head>
 <body>
@@ -43,11 +62,83 @@
         <span class="mark">{{ h.pct }}%</span>
         <span>ตอบถูก {{ h.correct }} จาก {{ h.total }} ข้อ</span>
       </div>
+      {% if h.review %}
+      <details class="history-questions">
+        <summary>ดูโจทย์และคำตอบที่ทำ ({{ h.review|length }} ข้อ)</summary>
+        <ol>
+          {% for it in h.review %}
+          <li class="hq-{{ it.status or 'none' }}">
+            <span class="hq-q">{{ it.question }}</span>
+            {% if it.status %}
+            <div class="hq-ans">{{ '✓' if it.status == 'ok' else '✕' }} คุณตอบ: {{ it.mine }}</div>
+            {% if it.status == 'bad' %}
+            <div class="hq-right">✓ เฉลย: {{ it.right }}</div>
+            {% endif %}
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </details>
+      {% endif %}
     </div>
     {% endfor %}
   {% else %}
     <p class="q-text">ยังไม่มีประวัติการทำแบบทดสอบ ลองสรุปเนื้อหาแล้วทำแบบทดสอบดูค่ะ</p>
   {% endif %}
+
+  <h2 class="section-title">บทเรียนที่เคยสรุป</h2>
+
+  {% if lessons %}
+    {% for l in lessons %}
+    <div class="card">
+      <p class="history-date">{{ l.created_at }}{% if l.source_name %} · {{ l.source_name }}{% endif %}</p>
+      <p class="lesson-title">{{ l.title }}</p>
+      <button type="button" class="btn btn-blue js-open-summary"
+              data-title="{{ l.title }}"
+              data-date="{{ l.created_at }}"
+              data-summary="{{ l.summary }}">เปิดดูผลสรุป</button>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p class="q-text">ยังไม่มีบทเรียนที่สรุปไว้</p>
+  {% endif %}
 </main>
+
+<div class="sm-overlay" id="summaryModal" role="dialog" aria-modal="true" aria-labelledby="smTitle">
+  <div class="sm-box">
+    <h2 class="sm-title" id="smTitle"></h2>
+    <p class="sm-date" id="smDate"></p>
+    <div class="sm-body" id="smBody"></div>
+    <div class="sm-actions">
+      <button type="button" class="btn btn-yellow" id="smClose">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const smModal = document.getElementById('summaryModal');
+const smTitle = document.getElementById('smTitle');
+const smDate = document.getElementById('smDate');
+const smBody = document.getElementById('smBody');
+
+function closeSummary(){ smModal.classList.remove('show'); }
+
+document.querySelectorAll('.js-open-summary').forEach(btn => {
+  btn.addEventListener('click', () => {
+    smTitle.textContent = btn.dataset.title;
+    smDate.textContent = btn.dataset.date;
+    smBody.innerHTML = DOMPurify.sanitize(marked.parse(btn.dataset.summary));
+    smBody.scrollTop = 0;
+    smModal.classList.add('show');
+    document.getElementById('smClose').focus();
+  });
+});
+
+document.getElementById('smClose').addEventListener('click', closeSummary);
+smModal.addEventListener('click', e => { if (e.target === smModal) closeSummary(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && smModal.classList.contains('show')) closeSummary();
+});
+</script>
 </body>
 </html>

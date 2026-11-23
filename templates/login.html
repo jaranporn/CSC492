@@ -5,7 +5,10 @@
     <title>เข้าสู่ระบบ</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
 </head>
-<body class="login-page">
+<body class="login-page"
+      data-dashboard-url="{{ url_for('dashboard') }}"
+      data-login-success="{{ '1' if login_success else '' }}"
+      data-not-registered="{{ '1' if not_registered else '' }}">
     <main class="login-card">
         <h1>เข้าสู่ระบบ</h1>
 
@@ -72,17 +75,17 @@
     }
 
     function goToDashboard() {
-        window.location.href = "{{ url_for('dashboard') }}";
+        window.location.href = document.body.dataset.dashboardUrl;
     }
 
-    {% if login_success %}
-    document.getElementById('successModal').classList.add('show');
-    setTimeout(goToDashboard, 1800);
-    {% endif %}
+    if (document.body.dataset.loginSuccess) {
+        document.getElementById('successModal').classList.add('show');
+        setTimeout(goToDashboard, 1800);
+    }
 
-    {% if not_registered %}
-    document.getElementById('notRegisteredModal').classList.add('show');
-    {% endif %}
+    if (document.body.dataset.notRegistered) {
+        document.getElementById('notRegisteredModal').classList.add('show');
+    }
     </script>
 </body>
 </html>

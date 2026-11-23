@@ -61,3 +61,67 @@ body{margin:0;font-family:'Prompt','Noto Sans Thai',sans-serif;color:#222;backgr
 
 .fill-input{width:100%;border:2px solid var(--grey);border-radius:999px;padding:14px 24px;margin-bottom:12px;font:1.1rem 'Prompt',sans-serif;outline:none}
 .fill-input:focus{border-color:var(--blue)}
+
+.popup-overlay{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  background:rgba(30,60,100,.5);
+  backdrop-filter:blur(4px);
+  opacity:0;visibility:hidden;
+  transition:opacity .25s ease,visibility .25s ease;
+}
+.popup-overlay.show{opacity:1;visibility:visible}
+
+.popup-card{
+  width:100%;max-width:400px;
+  padding:32px 28px 26px;
+  background:#fff;
+  border:2px solid var(--line);
+  border-radius:28px;
+  text-align:center;
+  box-shadow:0 20px 50px rgba(30,60,100,.3);
+  transform:translateY(20px) scale(.92);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.popup-overlay.show .popup-card{transform:translateY(0) scale(1)}
+
+.popup-icon{
+  width:68px;height:68px;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  background:var(--yellow);
+  color:var(--blue);
+  font-size:34px;font-weight:700;
+  animation:popup-pop .5s ease .15s both;
+}
+@keyframes popup-pop{
+  0%{transform:scale(.4);opacity:0}
+  70%{transform:scale(1.12)}
+  100%{transform:scale(1);opacity:1}
+}
+.popup-title{margin:0 0 8px;font-size:1.4rem;font-weight:700;color:var(--blue)}
+.popup-msg{margin:0 0 24px;font-size:1.05rem;line-height:1.6;color:#777}
+.popup-msg b{color:var(--blue);font-size:1.3rem}
+
+.popup-btn{
+  border:2px solid transparent;border-radius:999px;
+  padding:10px 44px;
+  font:600 1.05rem 'Prompt',sans-serif;
+  background:var(--blue);color:#fff;cursor:pointer;
+  transition:transform .15s ease,opacity .15s ease;
+}
+.popup-btn:hover{opacity:.9;transform:translateY(-1px)}
+.popup-btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+.q-block.missing{
+  animation:popup-shake .45s ease;
+  outline:3px dashed var(--yellow);
+  outline-offset:10px;
+  border-radius:20px;
+}
+@keyframes popup-shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-6px)}
+  75%{transform:translateX(6px)}
+}

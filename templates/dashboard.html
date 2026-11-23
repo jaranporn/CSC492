@@ -12,7 +12,7 @@
     <style>
     .qm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:999}
     .qm-overlay.show{display:flex}
-    .qm-box{background:#fff;border-radius:20px;padding:28px;max-width:360px;width:90%;font-family:inherit}
+    .qm-box{background:#fff;border-radius:20px;padding:28px;max-width:360px;width:90%;max-height:90vh;overflow-y:auto;font-family:inherit}
     .qm-box h3{margin:0 0 18px;text-align:center;color:#36689f}
     .qm-group{margin-bottom:18px}
     .qm-group p{margin:0 0 8px;font-weight:600;color:#444}
@@ -22,10 +22,25 @@
     .qm-actions button{border:none;border-radius:999px;padding:10px 22px;font:600 1rem inherit;cursor:pointer}
     .qm-cancel{background:#eee;color:#555}
     .qm-confirm{background:#ffe08a;color:#36689f}
+
+    .am-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1100}
+    .am-overlay.show{display:flex}
+    .am-box{background:#fff;border-radius:20px;padding:28px 28px 24px;max-width:340px;width:90%;text-align:center;font-family:inherit;box-shadow:0 12px 32px rgba(0,0,0,.2);animation:am-pop .18s ease-out}
+    .am-icon{width:56px;height:56px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700}
+    .am-icon.warning{background:#fff4d1;color:#d99a00}
+    .am-icon.error{background:#fde4e1;color:#d9412f}
+    .am-box h3{margin:0 0 8px;color:#36689f}
+    .am-box p{margin:0 0 20px;color:#555;line-height:1.5}
+    .am-ok{border:none;border-radius:999px;padding:10px 32px;font-family:inherit;font-weight:600;font-size:1rem;background:#ffe08a;color:#36689f;cursor:pointer}
+    .am-ok:hover{filter:brightness(.96)}
+    @keyframes am-pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+    @media (prefers-reduced-motion:reduce){.am-box{animation:none}}
     </style>
 
 </head>
-<body class="index-page">
+<body class="index-page"
+      data-summary-id="{{ loaded.id if loaded else '' }}"
+      data-summary="{{ loaded.summary if loaded else '' }}">
     <header class="index-topbar">
         <h1>AI-Based Lesson Summarizer and Quiz Generator</h1>
         <a href="{{ url_for('account') }}" class="btn-pill">บัญชีผู้ใช้</a>
@@ -76,6 +91,15 @@
           <label><input type="checkbox" id="qmTypeMc" checked> แบบเลือกคำตอบ</label>
           <label><input type="checkbox" id="qmTypeFill"> แบบเติมคำ</label>
         </div>
+        <div class="qm-group" id="qmChoicesGroup">
+          <p>จำนวนตัวเลือกต่อข้อ</p>
+          <select id="qmChoices" class="qm-select">
+            <option value="3">3 ตัวเลือก</option>
+            <option value="4" selected>4 ตัวเลือก</option>
+            <option value="5">5 ตัวเลือก</option>
+            <option value="6">6 ตัวเลือก</option>
+          </select>
+        </div>
         <div class="qm-group">
           <p>จำนวนข้อ</p>
           <select id="qmCount" class="qm-select">
@@ -92,6 +116,15 @@
       </div>
     </div>
 
+    <div class="am-overlay" id="alertOverlay" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle" aria-describedby="alertMsg">
+      <div class="am-box">
+        <div class="am-icon warning" id="alertIcon">!</div>
+        <h3 id="alertTitle">แจ้งเตือน</h3>
+        <p id="alertMsg"></p>
+        <button type="button" class="am-ok" id="alertOk">ตกลง</button>
+      </div>
+    </div>
+
     <script>
     const lessonText = document.getElementById('lessonText');
     const lessonFile = document.getElementById('lessonFile');
@@ -99,9 +132,62 @@
     const btn = document.getElementById('btnSummarize');
     const out = document.getElementById('summaryBox');   
 
+    const alertOverlay = document.getElementById('alertOverlay');
+    const alertIcon = document.getElementById('alertIcon');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMsg = document.getElementById('alertMsg');
+    const alertOk = document.getElementById('alertOk');
+
+    function showAlert(message, type) {
+        type = type || 'warning';
+        alertIcon.className = 'am-icon ' + type;
+        alertIcon.textContent = type === 'error' ? '✕' : '!';
+        alertTitle.textContent = type === 'error' ? 'เกิดข้อผิดพลาด' : 'แจ้งเตือน';
+        alertMsg.textContent = message;
+        alertOverlay.classList.add('show');
+        alertOk.focus();
+    }
+
+    function closeAlert() {
+        alertOverlay.classList.remove('show');
+    }
+
+    alertOk.addEventListener('click', closeAlert);
+    alertOverlay.addEventListener('click', (e) => {
+        if (e.target === alertOverlay) closeAlert();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && alertOverlay.classList.contains('show')) closeAlert();
+    });
+
     lessonFile.addEventListener('change', () => {
         const f = lessonFile.files[0];
         fileName.textContent = f ? f.name : 'เลือกไฟล์ รองรับ PDF / TXT';
+    });
+
+    const pageData = document.body.dataset;
+    if (pageData.summaryId) {
+        try {
+            sessionStorage.setItem('lessonSummary', pageData.summary);
+            sessionStorage.setItem('lessonSummaryId', pageData.summaryId);
+            sessionStorage.removeItem('lessonText');
+        } catch (e) {}
+    }
+
+    try {
+        const savedText = sessionStorage.getItem('lessonText');
+        if (savedText) lessonText.value = savedText;
+
+        const savedSummary = sessionStorage.getItem('lessonSummary');
+        if (savedSummary) {
+            window.currentSummary = savedSummary;
+            window.currentSummaryId = parseInt(sessionStorage.getItem('lessonSummaryId'), 10) || null;
+            out.innerHTML = DOMPurify.sanitize(marked.parse(savedSummary));
+        }
+    } catch (e) {}
+
+    lessonText.addEventListener('input', () => {
+        try { sessionStorage.setItem('lessonText', lessonText.value); } catch (e) {}
     });
 
     function formatElapsed(sec) {
@@ -133,7 +219,13 @@
             const data = await res.json();
             if (res.ok) {
                 out.innerHTML = DOMPurify.sanitize(marked.parse(data.summary));
-                window.currentSummary = data.summary;   
+                window.currentSummary = data.summary;
+                window.currentSummaryId = data.summary_id || null;
+                try {
+                    sessionStorage.setItem('lessonSummary', data.summary);
+                    if (data.summary_id) sessionStorage.setItem('lessonSummaryId', String(data.summary_id));
+                    else sessionStorage.removeItem('lessonSummaryId');
+                } catch (e) {}
             } else {
                 out.textContent = '⚠️ ' + data.error;
             }
@@ -151,10 +243,16 @@
 
     btnQuiz.addEventListener('click', () => {
         if (!window.currentSummary) {
-            alert('กรุณาสรุปเนื้อหาก่อนสร้างแบบทดสอบ');
+            showAlert('กรุณาสรุปเนื้อหาก่อนสร้างแบบทดสอบ');
             return;
         }
         qmOverlay.classList.add('show');
+    });
+
+    const qmTypeMc = document.getElementById('qmTypeMc');
+    const qmChoicesGroup = document.getElementById('qmChoicesGroup');
+    qmTypeMc.addEventListener('change', () => {
+        qmChoicesGroup.style.display = qmTypeMc.checked ? '' : 'none';
     });
 
     document.getElementById('qmCancel').addEventListener('click', () => {
@@ -166,9 +264,10 @@
         const wantMc = document.getElementById('qmTypeMc').checked;
         const wantFill = document.getElementById('qmTypeFill').checked;
         const count = parseInt(document.getElementById('qmCount').value, 10);
+        const numChoices = parseInt(document.getElementById('qmChoices').value, 10);
 
         if (!wantMc && !wantFill) {
-            alert('กรุณาเลือกรูปแบบข้อสอบอย่างน้อย 1 แบบ');
+            showAlert('กรุณาเลือกรูปแบบข้อสอบอย่างน้อย 1 แบบ');
             return;
         }
 
@@ -182,21 +281,26 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     summary: window.currentSummary,
+                    summary_id: window.currentSummaryId,
                     difficulty,
                     types: { mc: wantMc, fill: wantFill },
-                    count
+                    count,
+                    num_choices: numChoices
                 })
             });
             const data = await res.json();
 
             if (res.ok) {
                 sessionStorage.setItem('quiz', JSON.stringify(data.quiz));
+                if (data.quiz_id) sessionStorage.setItem('quizId', String(data.quiz_id));
+                else sessionStorage.removeItem('quizId');
+                ['quizAnswers', 'quizResult', 'quizScore'].forEach(k => sessionStorage.removeItem(k));
                 location.href = '/quiz';
             } else {
-                alert(data.error);
+                showAlert(data.error || 'สร้างข้อสอบไม่สำเร็จ ลองใหม่อีกครั้ง', 'error');
             }
         } catch (e) {
-            alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+            showAlert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
         } finally {
             stopQuizTimer();
             btnQuiz.disabled = false;

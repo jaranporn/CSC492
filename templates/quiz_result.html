@@ -47,67 +47,48 @@ function simpleRow(cls, mark, text){
   return d;
 }
 
-function normalize(s){
-  return (s || '').toString().trim().toLowerCase();
-}
+const result = JSON.parse(sessionStorage.getItem('quizResult') || 'null');
 
-function isCorrectFill(mine, q){
-  const n = normalize(mine);
-  if (n === normalize(q.answer)) return true;
-  if (Array.isArray(q.accepted)) {
-    return q.accepted.some(a => normalize(a) === n);
-  }
-  return false;
-}
+if (!result || quiz.length === 0 || !Array.isArray(result.results) || result.results.length !== quiz.length) {
+  const p = document.createElement('p');
+  p.className = 'q-text';
+  p.textContent = 'ยังไม่มีผลการทำแบบทดสอบ กลับไปทำแบบทดสอบก่อน';
+  root.appendChild(p);
+} else {
+  quiz.forEach((q, i) => {
+    const mine = answers[i];
+    const r = result.results[i];
+    const card = document.createElement('div');
+    card.className = 'card';
 
-let correctCount = 0;
+    const t = document.createElement('p');
+    t.className = 'q-text';
+    t.textContent = 'ข้อที่ ' + (i + 1) + ': ' + q.question;
+    card.appendChild(t);
 
-quiz.forEach((q, i) => {
-  const mine = answers[i];
-  const card = document.createElement('div');
-  card.className = 'card';
-
-  const t = document.createElement('p');
-  t.className = 'q-text';
-  t.textContent = 'ข้อที่ ' + (i + 1) + ': ' + q.question;
-  card.appendChild(t);
-
-  if (q.type === 'fill') {
-   
-    if (isCorrectFill(mine, q)) {
-      correctCount++;
-      card.appendChild(simpleRow('ok', '✓', 'คุณตอบ "' + (mine || '') + '" – ถูกต้อง'));
+    if (q.type === 'fill') {
+      if (r.correct) {
+        card.appendChild(simpleRow('ok', '✓', 'คุณตอบ "' + (mine || '') + '" – ถูกต้อง'));
+      } else {
+        card.appendChild(simpleRow('bad', '✕', 'คุณตอบ "' + (mine || '(ไม่ได้ตอบ)') + '" – ไม่ถูกต้อง'));
+        card.appendChild(simpleRow('ok', '✓', 'คำตอบที่ถูกต้องคือ "' + r.answer + '"'));
+      }
     } else {
-      card.appendChild(simpleRow('bad', '✕', 'คุณตอบ "' + (mine || '(ไม่ได้ตอบ)') + '" – ไม่ถูกต้อง'));
-      card.appendChild(simpleRow('ok', '✓', 'คำตอบที่ถูกต้องคือ "' + q.answer + '"'));
+      if (r.correct) {
+        card.appendChild(row('ok', '✓', 'ตัวเลือกที่ ' + (mine + 1) + ' – คุณตอบถูกต้อง', q.choices[mine] ?? ''));
+      } else {
+        card.appendChild(row('bad', '✕', 'คุณเลือกตัวเลือกที่ ' + (mine + 1) + ' – ไม่ถูกต้อง', q.choices[mine] ?? ''));
+        card.appendChild(row('ok', '✓', 'ตัวเลือกที่ ' + (r.answer + 1) + ' – ถูกต้อง', q.choices[r.answer] ?? ''));
+      }
     }
-  
-  } else {
-    if (mine === q.answer) {
-      correctCount++;
-      card.appendChild(row('ok', '✓', 'ตัวเลือกที่ ' + (mine + 1) + ' – คุณตอบถูกต้อง', q.choices[mine]));
-    } else {
-      card.appendChild(row('bad', '✕', 'คุณเลือกตัวเลือกที่ ' + (mine + 1) + ' – ไม่ถูกต้อง', q.choices[mine]));
-      card.appendChild(row('ok', '✓', 'ตัวเลือกที่ ' + (q.answer + 1) + ' – ถูกต้อง', q.choices[q.answer]));
-    }
-  }
 
-  const e = document.createElement('p');
-  e.className = 'explain';
-  e.textContent = 'คำอธิบาย : ' + (q.explanation || '-');
-  card.appendChild(e);
+    const e = document.createElement('p');
+    e.className = 'explain';
+    e.textContent = 'คำอธิบาย : ' + (r.explanation || '-');
+    card.appendChild(e);
 
-  root.appendChild(card);
-});
-
-if (quiz.length > 0) {
-  sessionStorage.setItem('quizScore', JSON.stringify({ total: quiz.length, correct: correctCount }));
-
-  fetch('/api/quiz/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ total: quiz.length, correct: correctCount })
-  }).catch(() => {});
+    root.appendChild(card);
+  });
 }
 </script>
 </body>

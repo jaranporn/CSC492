@@ -23,9 +23,19 @@
   </div>
 </main>
 
+<div class="popup-overlay" id="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+  <div class="popup-card">
+    <div class="popup-icon">!</div>
+    <h2 class="popup-title" id="popupTitle">ยังตอบไม่ครบ</h2>
+    <p class="popup-msg" id="popupMsg"></p>
+    <button class="popup-btn" id="popupOk" type="button">ตกลง</button>
+  </div>
+</div>
+
 <script>
 
-const quiz = JSON.parse(sessionStorage.getItem('quiz') || '[]');
+const quizId = parseInt(sessionStorage.getItem('quizId'), 10) || null;
+const quiz = quizId ? JSON.parse(sessionStorage.getItem('quiz') || '[]') : [];
 const answers = new Array(quiz.length).fill(null);
 const box = document.getElementById('questions');
 const counter = document.getElementById('counter');
@@ -78,11 +88,74 @@ function render(){
   updateCounter();
 }
 
-document.getElementById('checkBtn').addEventListener('click', () => {
+const popup = document.getElementById('popup');
+const popupMsg = document.getElementById('popupMsg');
+const popupOk = document.getElementById('popupOk');
+
+function esc(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showPopup(title, html){
+  document.getElementById('popupTitle').textContent = title;
+  popupMsg.innerHTML = html;
+  popup.classList.add('show');
+  popupOk.focus();
+}
+
+function closePopup(){
+  popup.classList.remove('show');
+  const idx = answers.findIndex(a => a === null);
+  const target = box.children[idx];
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.remove('missing');
+    void target.offsetWidth;
+    target.classList.add('missing');
+    setTimeout(() => target.classList.remove('missing'), 2500);
+  }
+}
+
+popupOk.addEventListener('click', closePopup);
+popup.addEventListener('click', e => { if (e.target === popup) closePopup(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && popup.classList.contains('show')) closePopup();
+});
+
+const checkBtn = document.getElementById('checkBtn');
+let submitting = false;
+
+checkBtn.addEventListener('click', async () => {
+  if (submitting) return;
   const left = answers.filter(a => a === null).length;
-  if (left > 0) { alert('ยังตอบไม่ครบ เหลืออีก ' + left + ' ข้อ'); return; }
-  sessionStorage.setItem('quizAnswers', JSON.stringify(answers));
-  location.href = '/quiz/result';
+  if (left > 0) {
+    showPopup('ยังตอบไม่ครบ', 'เหลืออีก <b>' + left + '</b> ข้อที่ยังไม่ได้ตอบ<br>กรุณาตอบให้ครบก่อนตรวจคำตอบนะคะ');
+    return;
+  }
+
+  submitting = true;
+  checkBtn.disabled = true;
+  checkBtn.textContent = 'กำลังตรวจ...';
+  try {
+    const res = await fetch('/api/quiz/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quiz_id: quizId, answers })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showPopup('ตรวจคำตอบไม่สำเร็จ', esc(data.error || 'ลองใหม่อีกครั้ง'));
+      return;
+    }
+    sessionStorage.setItem('quizAnswers', JSON.stringify(answers));
+    sessionStorage.setItem('quizResult', JSON.stringify(data));
+    sessionStorage.setItem('quizScore', JSON.stringify({ total: data.total, correct: data.correct }));
+    location.href = '/quiz/result';
+  } catch (e) {
+    showPopup('เชื่อมต่อไม่ได้', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง');
+  } finally {
+    submitting = false;
+    checkBtn.disabled = false;
+    checkBtn.textContent = 'ตรวจคำตอบ';
+  }
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
