@@ -29,13 +29,21 @@ else:
     ID_COLUMN = "INTEGER PRIMARY KEY AUTOINCREMENT"
     PLACEHOLDER = "?"
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "users.db")
+
 
 def get_db():
+    print("DATABASE PATH:", DB_PATH)
+    print("DATABASE_URL:", bool(DATABASE_URL))
+
     if DATABASE_URL:
         return psycopg2.connect(
-            DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
+            DATABASE_URL,
+            cursor_factory=psycopg2.extras.RealDictCursor
         )
-    conn = sqlite3.connect("users.db")
+
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
