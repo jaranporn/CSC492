@@ -83,7 +83,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    
 
 
 def insert(sql, params=()):
@@ -658,7 +657,6 @@ def account():
         total_q=total_q,
         history=history,
     )
-
 
 if __name__ == "__main__":
     from livereload import Server
